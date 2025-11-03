@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aras Galaxy - Mini Oyun Merkezi</title>
+<style>
+  body { font-family: Arial; margin:0; padding:0; text-align:center; background:#0a1f3d; color:white; }
+  h2 { margin-top:20px; }
+  button { margin:5px; padding:10px 15px; font-size:16px; cursor:pointer; border:none; border-radius:5px; }
+  #gameArea { margin:20px auto; width:95%; max-width:600px; min-height:350px; border:3px solid white; border-radius:10px; padding:10px; background:#112b4a; position:relative; overflow:hidden; }
+  .fish, .mushroom, .balloon { position:absolute; border-radius:50%; cursor:pointer; }
+  @keyframes swim { from { left:-60px; } to { left:110%; } }
+  @keyframes floatBalloon { from { bottom:-50px; } to { bottom:110%; } }
+</style>
+</head>
+<body>
+
+<h1>🚀 Aras Galaxy - Mini Oyun Merkezi</h1>
+<div id="miniGameMenu">
+  <button onclick="startGame('fishing')">🎣 Balık Tutma</button>
+  <button onclick="startGame('mushroom')">🍄 Mantar Toplama</button>
+  <button onclick="startGame('balloon')">🎈 Balon Patlatma</button>
+</div>
+
+<div id="gameArea">
+  <p>Bir mini oyun seç!</p>
+</div>
+
+<script>
+// Mini Oyun Merkezi
+function startGame(gameName){
+  const gameArea = document.getElementById('gameArea');
+  gameArea.innerHTML = '';
+  
+  switch(gameName){
+    case 'fishing':
+      gameArea.innerHTML = `
+        <h2>🎣 Balık Tutma</h2>
+        <button id="castBtn">Oltayı At</button>
+        <p id="result"></p>
+        <p>Toplam Para: <span id="money">0</span> 💰</p>
+        <div id="pond" style="position:relative;width:100%;height:250px;background:#1b3b6f;overflow:hidden;border-radius:10px;"></div>
+        <div id="collection"></div>`;
+      initFishing();
+      break;
+
+    case 'mushroom':
+      gameArea.innerHTML = `
+        <h2>🍄 Mantar Toplama</h2>
+        <button id="spawnBtn">Mantar Çıkart</button>
+        <p id="result"></p>
+        <p>Toplam Para: <span id="money">0</span> 💰</p>
+        <div id="field" style="position:relative;width:100%;height:250px;background:#4b7b2f;overflow:hidden;border-radius:10px;"></div>
+        <div id="collection"></div>`;
+      initMushroom();
+      break;
+
+    case 'balloon':
+      gameArea.innerHTML = `
+        <h2>🎈 Balon Patlatma</h2>
+        <p>Balonlara tıkla, puan kazan!</p>
+        <p>Puan: <span id="score">0</span></p>
+        <div id="balloonField" style="position:relative;width:100%;height:250px;background:#113344;overflow:hidden;border-radius:10px;"></div>
+        <button id="spawnBalloonBtn">Balon Çıkart</button>`;
+      initBalloon();
+      break;
+
+    default:
+      gameArea.innerHTML = `<p>Oyun bulunamadı!</p>`;
+  }
+}
+
+// 🎣 Balık Tutma
+function initFishing(){
+  let money=0; let collection={};
+  const fishTypes = [
+    {name:'Küçük Balık', value:5, color:'orange', size:30, speed:5, rarity:'normal'},
+    {name:'Orta Balık', value:15, color:'yellow', size:40, speed:7, rarity:'normal'},
+    {name:'Büyük Balık', value:30, color:'red', size:50, speed:9, rarity:'normal'},
+    {name:'Efsane Balık', value:100, color:'gold', size:60, speed:12, rarity:'rare'},
+    {name:'Unicorn Balık', value:500, color:'violet', size:70, speed:15, rarity:'event'}
+  ];
+
+  function catchFish(fish){
+    money += fish.value;
+    document.getElementById('money').innerText = money;
+    document.getElementById('result').innerText = `🎉 ${fish.name} tuttun ve ${fish.value} 💰 kazandın!`;
+    collection[fish.name] = collection[fish.name] ? collection[fish.name]+1 : 1;
+    updateCollection();
+  }
+  function updateCollection(){
+    let html = "<h3>🐟 Balık Koleksiyonu</h3><ul>";
+    for(const name in collection) html+=`<li>${name}: ${collection[name]}</li>`;
+    html+="</ul>";
+    document.getElementById('collection').innerHTML=html;
+  }
+
+  document.getElementById('castBtn').addEventListener('click', ()=>{
+    const rand = Math.random();
+    let fish;
+    if(rand<0.05) fish=fishTypes.find(f=>f.rarity==='event');
+    else if(rand<0.15) fish=fishTypes.find(f=>f.rarity==='rare');
+    else fish=fishTypes.filter(f=>f.rarity==='normal')[Math.floor(Math.random()*3)];
+
+    const pond = document.getElementById('pond');
+    const fishEl=document.createElement('div');
+    fishEl.classList.add('fish');
+    fishEl.style.background=fish.color;
+    fishEl.style.width=fish.size+'px';
+    fishEl.style.height=fish.size/2+'px';
+    fishEl.style.top=Math.random()*(pond.offsetHeight-50)+'px';
+    fishEl.style.left='-60px';
+    fishEl.style.animation=`swim ${fish.speed}s linear infinite`;
+    pond.appendChild(fishEl);
+
+    fishEl.addEventListener('click', ()=>{
+      catchFish(fish);
+      pond.removeChild(fishEl);
+    });
+    setTimeout(()=>{if(pond.contains(fishEl)) pond.removeChild(fishEl)},10000);
+  });
+}
+
+// 🍄 Mantar Toplama
+function initMushroom(){
+  let money=0; let collection={};
+  const mushrooms=[
+    {name:'Küçük Mantar', value:5, color:'red', size:30, rarity:'normal'},
+    {name:'Orta Mantar', value:15, color:'brown', size:40, rarity:'normal'},
+    {name:'Büyük Mantar', value:30, color:'yellow', size:50, rarity:'rare'},
+    {name:'Altın Mantar', value:100, color:'gold', size:60, rarity:'event'}
+  ];
+  function catchMushroom(m){
+    money+=m.value;
+    document.getElementById('money').innerText=money;
+    document.getElementById('result').innerText=`🍄 ${m.name} topladın ve ${m.value} 💰 kazandın!`;
+    collection[m.name]=collection[m.name]?collection[m.name]+1:1;
+    updateCollection();
+  }
+  function updateCollection(){
+    let html="<h3>🍄 Mantar Koleksiyonu</h3><ul>";
+    for(const name in collection) html+=`<li>${name}: ${collection[name]}</li>`;
+    html+="</ul>";
+    document.getElementById('collection').innerHTML=html;
+  }
+  document.getElementById('spawnBtn').addEventListener('click', ()=>{
+    const rand=Math.random();
+    let m;
+    if(rand<0.05) m=mushrooms.find(x=>x.rarity==='event');
+    else if(rand<0.15) m=mushrooms.find(x=>x.rarity==='rare');
+    else m=mushrooms.find(x=>x.rarity==='normal');
+    const field=document.getElementById('field');
+    const el=document.createElement('div');
+    el.classList.add('mushroom');
+    el.style.background=m.color;
+    el.style.width=m.size+'px';
+    el.style.height=m.size+'px';
+    el.style.top=Math.random()*(field.offsetHeight-50)+'px';
+    el.style.left=Math.random()*(field.offsetWidth-50)+'px';
+    el.addEventListener('click',()=>{catchMushroom(m);field.removeChild(el);});
+    field.appendChild(el);
+    setTimeout(()=>{if(field.contains(el)) field.removeChild(el)},10000);
+  });
+}
+
+// 🎈 Balon Patlatma
+function initBalloon(){
+  let score=0;
+  document.getElementById('score').innerText=score;
+  document.getElementById('spawnBalloonBtn').addEventListener('click',()=>{
+    const field=document.getElementById('balloonField');
+    const b=document.createElement('div');
+    b.classList.add('balloon');
+    const size=30+Math.random()*20;
+    b.style.width=size+'px';
+    b.style.height=size+'px';
+    b.style.background=['red','yellow','blue','pink'][Math.floor(Math.random()*4)];
+    b.style.bottom='-50px';
+    b.style.left=Math.random()*(field.offsetWidth-50)+'px';
+    b.style.animation=`floatBalloon ${3+Math.random()*3}s linear forwards`;
+    b.addEventListener('click',()=>{
+      score+=10;
+      document.getElementById('score').innerText=score;
+      field.removeChild(b);
+    });
+    field.appendChild(b);
+    setTimeout(()=>{if(field.contains(b)) field.removeChild(b)},7000);
+  });
+}
+</script>
+
+</body>
+</html>
